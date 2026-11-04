@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
+<!--
+==================================================
+এই সংস্করণে কী কী বদলেছে (আগের index.html থেকে):
+ ১) বানান সংশোধন: "দুরুদ" ও "উভয়টি" — UI লেখা, কমেন্ট ও মেসেজ সব জায়গায় (সংশ্লিষ্ট ফিচার বা লজিক অপরিবর্তিত)।
+ ২) সাপ্তাহিক ফর্মের "উপস্থিত থাকতে পারিনি" অপশনের বানান ফর্মের আসল অপশনের সাথে মেলানো হয়েছে ("জুরুরতের") — নইলে সার্ভার উত্তর গ্রহণ করত না।
+    পাঠচক্র/মজলিসের কারণ-প্রশ্নে এখন "উভয়টি" শব্দটিই ব্যবহার হয়; ফর্মে কারণ-ঘর একটিই, তাই সার্ভার তিন ক্ষেত্রেই একই ঘরে লেখে।
+ ৩) দৈনিক ও সাপ্তাহিক দুটি আলাদা Web App ব্যবহার করে: দৈনিকের URL API_CONFIG.webAppUrl-এ (আগের মতো), সাপ্তাহিকের URL WEEKLY_API_CONFIG.webAppUrl-এ (নতুন — এখনো ফাঁকা, ডিপ্লয়ের পর বসান)।
+ ভাঙেনি: দৈনিক ফর্মের ৩ ধাপ, নকশা, বিদ্যমান প্রশ্ন ও লজিক, গাইডলাইন, সহায়তা সেকশন।
+==================================================
+-->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>দৈনিক ও সাপ্তাহিক আমল ট্র্যাকার | দাওয়াহ মুভমেন্ট গোপালগঞ্জ</title>
@@ -591,6 +601,8 @@ textarea.input{min-height:96px;padding-top:.7rem;resize:vertical;line-height:1.6
 .ok-badge.err{background:#fee2e2;color:#b91c1c}
 body.no-scroll{overflow:hidden}
 
+#wkStepper li{cursor:pointer}
+#wkStepper li.locked{opacity:.65}
 </style>
 <!-- CSS SECTION END -->
 </head>
@@ -617,6 +629,7 @@ body.no-scroll{overflow:hidden}
     <nav class="nav-desktop" aria-label="প্রধান মেনু">
       <a href="#home">হোম</a>
       <a href="#registration" class="nav-cta">আমলশিট পূরণ</a>
+      <a href="#weekly">সাপ্তাহিক আমল</a>
       <a href="#guideline">গাইডলাইন</a>
     </nav>
     <button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="mobileNav" aria-label="মেনু খুলুন">
@@ -624,7 +637,7 @@ body.no-scroll{overflow:hidden}
     </button>
   </div>
   <nav class="mobile-nav" id="mobileNav" hidden aria-label="মোবাইল মেনু">
-    <a href="#home">হোম</a><a href="#registration">আমলশিট পূরণ</a><a href="#guideline">গাইডলাইন</a>
+    <a href="#home">হোম</a><a href="#registration">আমলশিট পূরণ</a><a href="#weekly">সাপ্তাহিক আমল</a><a href="#guideline">গাইডলাইন</a>
     <a href="#registration" class="m-cta">আজকের আমলশিট পূরণ করুন</a>
   </nav>
 </header>
@@ -692,6 +705,26 @@ body.no-scroll{overflow:hidden}
 <!-- DAILY AMAL TRACKER END -->
 
 <!-- WEEKLY AMAL TRACKER START -->
+<section class="section" id="weekly">
+  <div class="container narrow">
+    <div class="section-head center"><h2>সাপ্তাহিক আমল</h2><p>শুক্রবার ও সোমবারের আমল নির্ধারিত দিনে পূরণ করুন।</p></div>
+    <div class="card form-card" id="wkCard">
+      <div class="form-top">
+        <span class="logo-box" aria-hidden="true"><img src="data:image/jpeg;base64,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" alt=""></span>
+        <div><small id="wkOrg"></small><h3>সাপ্তাহিক আমল ট্র্যাকার</h3></div>
+      </div>
+      <div class="form-body">
+        <ol class="stepper" id="wkStepper"></ol>
+        <p class="progress-text" id="wkProgress" aria-live="polite"></p>
+        <div class="form-alert" id="wkAlert" role="alert" hidden><svg class="icon"><use href="#i-alert"/></svg><span id="wkAlertText"></span></div>
+        <div id="wkPanels"></div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- WEEKLY AMAL TRACKER END -->
+
+<!-- GUIDELINE SECTION START -->
 <section class="section" id="guideline">
   <div class="container narrow">
     <div class="section-head"><h2>গাইডলাইন</h2></div>
@@ -703,10 +736,10 @@ body.no-scroll{overflow:hidden}
       <li>নিজের সঠিক মোবাইল নম্বর দিন। ভুল নম্বর দেবেন না।</li>
       <li>প্রতিদিন একই মোবাইল নম্বর ব্যবহার করুন।</li>
       <li>সব তথ্য যাচাই করে ‘জমা দিন’ বাটনে ক্লিক করুন।</li>
-      <li>সফলতার বার্তা দেখলে বুঝবেন আপনার আমলশিট জমা হয়েছে। জমা না হলে দায়িত্বশীলদের সঙ্গে যোগাযোগ করুন।</li></div>
+      <li>সফলতার বার্তা দেখলে বুঝবেন আপনার আমলশিট জমা হয়েছে। জমা না হলে দায়িত্বশীলদের সঙ্গে যোগাযোগ করুন।</li></ol></div>
   </div>
 </section>
-<!-- WEEKLY AMAL TRACKER END -->
+<!-- GUIDELINE SECTION END -->
 <!-- SUPPORT SECTION START -->
 <section class="section" id="support">
   <div class="container narrow">
@@ -734,11 +767,27 @@ document.getElementById("supportCall").href="tel:+"+d;})();
 <!-- FOOTER SECTION START -->
 <footer class="site-footer"><div class="container"><div class="footer-grid">
   <div><h3 id="footTitle">দৈনিক ও সাপ্তাহিক আমল ট্র্যাকার</h3><p style="margin-top:6px">আয়োজনে: <span id="footOrg">দাওয়াহ মুভমেন্ট গোপালগঞ্জ</span></p></div>
-  <nav class="footer-links"><a href="#home">হোম</a><a href="#registration">আমলশিট পূরণ</a><a href="#guideline">গাইডলাইন</a></nav>
+  <nav class="footer-links"><a href="#home">হোম</a><a href="#registration">আমলশিট পূরণ</a><a href="#weekly">সাপ্তাহিক আমল</a><a href="#guideline">গাইডলাইন</a></nav>
 </div><p class="copy">© ২০২৬ দাওয়াহ মুভমেন্ট গোপালগঞ্জ। সর্বস্বত্ব সংরক্ষিত।</p></div></footer>
 <!-- FOOTER SECTION END -->
 
 <div class="loader" id="loader" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><p>জমা হচ্ছে… অনুগ্রহ করে অপেক্ষা করুন।</p></div>
+
+<!-- WEEKLY SUCCESS / ERROR MODALS -->
+<div class="loader" id="wkLoader" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><p>জমা হচ্ছে… অনুগ্রহ করে অপেক্ষা করুন।</p></div>
+<div class="modal" id="wkOkModal" role="dialog" aria-modal="true" aria-labelledby="wkOkTitle" aria-hidden="true"><div class="modal-box">
+  <div class="ok-badge"><svg class="icon"><use href="#i-check"/></svg></div>
+  <h3 id="wkOkTitle">আলহামদুলিল্লাহ!</h3>
+  <p id="wkOkText"></p>
+  <p class="modal-note"><b id="wkOkDate"></b></p>
+  <div class="modal-actions" style="grid-template-columns:1fr"><button type="button" class="btn btn-primary" data-wkhome data-autofocus>হোমে ফিরে যান</button></div>
+</div></div>
+<div class="modal" id="wkErrModal" role="dialog" aria-modal="true" aria-labelledby="wkErrTitle" aria-hidden="true"><div class="modal-box">
+  <div class="ok-badge err"><svg class="icon"><use href="#i-alert"/></svg></div>
+  <h3 id="wkErrTitle">দুঃখিত!</h3>
+  <p id="wkErrMsg"></p>
+  <div class="modal-actions"><button type="button" class="btn btn-primary" id="wkRetry" data-autofocus>আবার চেষ্টা করুন</button><button type="button" class="btn btn-outline" data-wkhome>হোমে ফিরে যান</button></div>
+</div></div>
 
 <!-- SUCCESS / ERROR MODALS -->
 <div class="modal" id="okModal" role="dialog" aria-modal="true" aria-labelledby="okTitle" aria-hidden="true"><div class="modal-box">
@@ -804,7 +853,11 @@ const OTHERS=[
  {title:"ইস্তেগফার পড়েছি",qs:[
   {id:780705687,t:"r",l:"ইস্তেগফার পড়েছি",o:["আলহামদুলিল্লাহ, পড়েছি","আফোয়ান, আমল ছুটে গেছে"]},
   {id:802384520,u:818018182,t:"r",l:"আলহামদুলিল্লাহ, পড়েছি",o:O_CNT,s:a=>a[780705687]==="আলহামদুলিল্লাহ, পড়েছি"}]},
- {title:"প্রতি ওয়াক্তের সালাতের পূর্বে মিসওয়াক",qs:[
+ {title:"দুরুদ পড়া",qs:[
+  {id:562601658,t:"r",l:"প্রতিদিন কমপক্ষে ১০০ বার দুরুদ পড়েছি",o:["আলহামদুলিল্লাহ, পড়েছি","আফোয়ান, আমল ছুটে গেছে"]}]},
+ {title:"দাওয়াত দেওয়া",qs:[
+  {id:370865213,t:"r",l:"প্রতিদিন কমপক্ষে একজনকে দাওয়াত দিয়েছি",o:["আলহামদুলিল্লাহ, দিয়েছি","আফোয়ান, আমল ছুটে গেছে"]}]},
+ {title:"প্রতি ওয়াক্তের সালাতের পূর্বে মিসওয়াক",qs:[
   {id:202779755,t:"r",l:"প্রতি ওয়াক্তের সালাতের পূর্বে মিসওয়াক",o:["আলহামদুলিল্লাহ, করেছি","আফোয়ান, কোন ওয়াক্তেই করতে পারিনি"]},
   {id:119842117,t:"c",l:"আলহামদুলিল্লাহ, করেছি",o:O_WAQT,s:a=>a[202779755]==="আলহামদুলিল্লাহ, করেছি"}]}
 ];
@@ -825,6 +878,47 @@ function prayerCard(p){
 const CARDS=[...PRAYERS.map(prayerCard),...OTHERS];
 const PRAYER_COUNT=PRAYERS.length;
 const STEPS=["প্রাথমিক তথ্য","পাঁচ ওয়াক্ত সালাত","অন্যান্য আমল"];
+/* ===== সাপ্তাহিক আমল কনফিগারেশন (Code_Weekly.gs-এর সঙ্গে হুবহু এক) ===== */
+const WEEKLY_API_CONFIG = {
+  webAppUrl: "",                 // << সাপ্তাহিক Apps Script Web App URL এখানে বসান (…/exec) — দৈনিকের URL থেকে আলাদা
+  timeoutMs: 120000,
+  statusRetries: 20
+};
+const W_Y="আলহামদুলিল্লাহ, ", W_MISS="আফোয়ান, আমল ছুটে গেছে", W_DUROOD_MAX=100000;
+const W_KAHF=[W_Y+"সম্পূর্ণ পড়েছি","আফোয়ান, আংশিক পড়েছি",W_MISS];
+const W_DUROOD=[W_Y+"পড়েছি","আফোয়ান, একেবারেই পড়তে পারিনি"];
+const W_FAST=[W_Y+"রেখেছি",W_MISS];
+const W_ATT=[W_Y+"উপস্থিত থেকেছি","আফোয়ান, জুরুরতের কারণে থাকতে পারিনি"];
+const W_STYPE=[W_Y+"পাঠচক্রে উপস্থিত থেকেছি",W_Y+"ইসলাহি মজলিসে উপস্থিত থেকেছি",W_Y+"উভয়টিতে উপস্থিত থেকেছি"];
+/* t: r=রেডিও, x=বাধ্যতামূলক লেখা (lab=true হলে প্রশ্নটি উপরে লেখা থাকে, নইলে শিরোনাম শুধু placeholder)
+   u: রেডিওর সাথে "নিজে লিখুন" (সংখ্যা) বিকল্প — রেডিও অথবা সংখ্যা, দুটি একসাথে নয় */
+const W_CARDS={
+ FRIDAY:[
+  {title:"সূরা কাহাফ",qs:[
+   {k:"kahf",t:"r",l:"সূরা কাহাফ পড়েছি",o:W_KAHF},
+   {k:"kahfPages",t:"x",lab:true,max:100,l:"সূরা কাহাফ কত পৃষ্ঠা পড়েছেন?",s:a=>a.kahf===W_KAHF[1]}]},
+  {title:"জুমার খুতবা",qs:[
+   {k:"khutba",t:"r",l:"জুমার সম্পূর্ণ খুতবা শুনেছি",o:[W_Y+"সম্পূর্ণ শুনেছি",W_MISS]}]},
+  {title:"শুক্রবারের দুরুদ",qs:[
+   {k:"durood",t:"r",l:"শুক্রবার ১০০০ বার দুরুদ পড়েছি",o:W_DUROOD},
+   {k:"duroodQuick",t:"r",l:"শুক্রবার দুরুদ কতবার পড়েছি?",o:["৫০০ বার","৭০০ বার","১০০০ বার"],u:{k:"duroodCustom"},s:a=>a.durood===W_DUROOD[0]}]},
+  {title:"বৃহস্পতিবারের রোজা",qs:[
+   {k:"thursday",t:"r",l:"বৃহস্পতিবারের রোজা রেখেছি",o:W_FAST}]}
+ ],
+ MONDAY:[
+  {title:"সোমবারের রোজা",qs:[
+   {k:"monFast",t:"r",l:"সোমবারের রোজা রেখেছি",o:W_FAST}]},
+  {title:"সাপ্তাহিক আল-কোরআনের দারস",qs:[
+   {k:"dars",t:"r",l:"সাপ্তাহিক আল-কোরআনের দারসে উপস্থিত থেকেছি",o:W_ATT},
+   {k:"darsReason",t:"x",l:"কী জরুরতের কারণে উপস্থিত হতে পারেননি?",s:a=>a.dars===W_ATT[1]}]},
+  {title:"পাঠচক্র ও ইসলাহি মজলিস",qs:[
+   {k:"study",t:"r",l:"সাপ্তাহিক পাঠচক্র ও ইসলাহি মজলিসে উপস্থিত থেকেছি",o:W_ATT},
+   {k:"studyMissReason",t:"x",l:"কী জরুরতের কারণে পাঠচক্র ও ইসলাহি মজলিসে উপস্থিত থাকতে পারেননি?",s:a=>a.study===W_ATT[1]},
+   {k:"studyType",t:"r",l:"কোনটায় উপস্থিত থেকেছি?",o:W_STYPE,s:a=>a.study===W_ATT[0]},
+   {k:"studyReasonA",t:"x",l:"কী জরুরতের কারণে উভয়টিতে উপস্থিত থাকতে পারেননি?",s:a=>a.studyType===W_STYPE[0]},
+   {k:"studyReasonB",t:"x",l:"কী জরুরতের কারণে উভয়টিতে উপস্থিত থাকতে পারেননি?",s:a=>a.studyType===W_STYPE[1]}]}
+ ]
+};
 </script>
 <!-- GOOGLE FORMS CONFIGURATION END -->
 
@@ -878,7 +972,7 @@ function sync(){
     el.hidden=!v;
   })});
   var done=0;
-  $$(".acard").forEach(function(d){
+  $$("#amalForm .acard").forEach(function(d){
     var i=+d.dataset.i,u=unlocked(i),ok=cardOk(i)&&u,h=$(".acard-h",d),b=$(".acard-b",d);
     h.disabled=!u;d.classList.toggle("is-done",ok&&CARDS[i].qs.some(function(q){return vis(q)&&q.t==="r"&&(A[q.id]||(q.u&&A[q.u]))}));
     if(d.classList.contains("is-done"))done++;
@@ -926,7 +1020,7 @@ function focusBad(el){
 }
 function alertMsg(t){var a=$("#formAlert");if(t){$("#formAlertText").textContent=t;a.hidden=false}else a.hidden=true}
 function show(n,init){
-  step=n;$$(".step-panel").forEach(function(p){p.classList.toggle("active",+p.dataset.step===n)});
+  step=n;$$("#amalForm .step-panel").forEach(function(p){p.classList.toggle("active",+p.dataset.step===n)});
   sync();alertMsg("");if(!init)$("#formCard").scrollIntoView({block:"start"});
 }
 
@@ -963,8 +1057,21 @@ $("#nextBtn").addEventListener("click",function(){
   if(busy)return;
   var bad=validate(step);
   if(bad.length){alertMsg("অনুগ্রহ করে লাল চিহ্নিত প্রশ্নগুলোর উত্তর দিন।");focusBad(bad[0]);return}
+  if(step===0){verifyMobile();return}
   if(step<2)show(step+1);else submit();
 });
+function verifyMobile(){
+  busy=true;sync();$("#nextBtn").textContent="যাচাই হচ্ছে…";
+  api("POST","",{action:"verify",mobile:$("#f_mobile").value},20000).then(function(r){
+    busy=false;
+    if(r&&r.ok&&r.authorized){show(1);return}
+    sync();var f=$("#fld-mobile");setErr(f,(r&&r.message)||"মোবাইল নম্বর যাচাই করা যায়নি।");
+    alertMsg("মোবাইল নম্বর যাচাই সম্পন্ন হয়নি।");focusBad(f);
+  },function(err){
+    busy=false;sync();
+    alertMsg(err&&err.code==="NO_URL"?"সার্ভারের ঠিকানা (Web App URL) এখনও সেট করা হয়নি।":"সার্ভারের সাথে যোগাযোগ করা যায়নি। ইন্টারনেট দেখে আবার চেষ্টা করুন।");
+  });
+}
 
 /* ---- মেনু ও মোডাল ---- */
 var mb=$("#menuBtn"),mn=$("#mobileNav");
@@ -1032,13 +1139,13 @@ function done(r){
   $("#loader").classList.remove("open");busy=false;
   if(r&&r.ok&&r.status==="success"){rid=null;$("#okDate").textContent="জমার তারিখ: "+bnDate(r.date);openM("okModal");return}
   var msg={DUPLICATE:"আপনি আজকের আমলশিট ইতোমধ্যে জমা দিয়েছেন। আগামী দিন আবার নতুন আমলশিট জমা দিতে পারবেন।",
-    CLOSED:(r&&r.message)||"ফর্ম এখন বন্ধ আছে।",INVALID:(r&&r.message)||"তথ্য সঠিক নয়। অনুগ্রহ করে যাচাই করে আবার চেষ্টা করুন।"}[r&&r.code];
-  if(r&&(r.code==="DUPLICATE"||r.code==="CLOSED"||r.code==="INVALID"))rid=null;
+    CLOSED:(r&&r.message)||"ফর্ম এখন বন্ধ আছে।",NOT_AUTHORIZED:(r&&r.message)||"এই মোবাইল নম্বরটি অনুমোদিত নয়।",INACTIVE:(r&&r.message)||"এই মোবাইল নম্বরটি সক্রিয় নয়।",INVALID:(r&&r.message)||"তথ্য সঠিক নয়। অনুগ্রহ করে যাচাই করে আবার চেষ্টা করুন।"}[r&&r.code];
+  if(r&&(r.code==="DUPLICATE"||r.code==="CLOSED"||r.code==="INVALID"||r.code==="NOT_AUTHORIZED"||r.code==="INACTIVE"))rid=null;
   fail(msg||"দুঃখিত! আপনার আমলশিট জমা হয়নি। আপনার তথ্য সংরক্ষিত হয়েছে বলে নিশ্চিত হওয়া যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।",r&&r.code);
 }
 function fail(msg,code){
   $("#loader").classList.remove("open");busy=false;sync();
-  $("#errMsg").textContent=msg;$("#retryBtn").hidden=(code==="DUPLICATE"||code==="CLOSED");
+  $("#errMsg").textContent=msg;$("#retryBtn").hidden=(code==="DUPLICATE"||code==="CLOSED"||code==="NOT_AUTHORIZED"||code==="INACTIVE");
   openM("errModal");
 }
 $("#retryBtn").addEventListener("click",function(){closeM();submit()});
@@ -1047,13 +1154,299 @@ function resetForm(){
   $$("#amalForm input[type=radio],#amalForm input[type=checkbox]").forEach(function(x){x.checked=false});
   $$("#amalForm textarea").forEach(function(x){x.value=""});
   $("#f_name").value="";$("#f_mobile").value="";
-  $$(".acard-h").forEach(function(h){h.setAttribute("aria-expanded","false")});$$(".acard-b").forEach(function(b){b.hidden=true});
-  $$(".field,.field-error").forEach(function(f){if(f.classList.contains("field"))clearErr(f)});
+  $$("#amalForm .acard-h").forEach(function(h){h.setAttribute("aria-expanded","false")});$$("#amalForm .acard-b").forEach(function(b){b.hidden=true});
+  $$("#amalForm .field").forEach(clearErr);
   show(0,true);loadInfo();
 }
 show(0,true);loadInfo();
 })();
 </script>
 <!-- GOOGLE FORMS SUBMISSION LOGIC END -->
+
+<!-- WEEKLY FORMS LOGIC START -->
+<script>
+(function(){
+"use strict";
+var $=function(s,r){return(r||document).querySelector(s)};
+var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+var esc=function(t){return String(t).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})};
+var BN="০১২৩৪৫৬৭৮৯", MON=["জানুয়ারি","ফেব্রুয়ারি","মার্চ","এপ্রিল","মে","জুন","জুলাই","আগস্ট","সেপ্টেম্বর","অক্টোবর","নভেম্বর","ডিসেম্বর"];
+function bn(n){return String(n).replace(/\d/g,function(d){return BN[d]})}
+function bnDate(ymd){var p=ymd.split("-");return bn(p[2]+" "+MON[+p[1]-1]+" "+p[0])}
+var SES=["FRIDAY","MONDAY"];
+var META={FRIDAY:{step:"শুক্রবারের আমল",day:"শুক্রবার"},MONDAY:{step:"সোমবারের আমল",day:"সোমবার"}};
+var ST={}, info=null, active=0, chosen=false, lastFocus=null, wbusy=false, curS=null;
+function freshState(){return {A:{},rid:null,verified:false,done:false}}
+SES.forEach(function(s){ST[s]=freshState()});
+$("#wkOrg").textContent=SITE_CONFIG.organizationName;
+
+function P(s){return $('.step-panel[data-wk="'+s+'"]')}
+
+/* ---- রেন্ডার ---- */
+function qHtml(s,q){
+  var nm="wk_"+s+"_"+q.k;
+  if(q.t==="r") return '<fieldset class="field" data-k="'+q.k+'" hidden><legend class="label">'+esc(q.l)+'<span class="req">*</span></legend><div class="choice-grid">'+
+    q.o.map(function(o){return '<label class="choice"><input type="radio" name="'+nm+'" value="'+esc(o)+'"><span class="choice-body"><span class="dot"></span><span><strong>'+esc(o)+'</strong></span></span></label>'}).join("")+
+    (q.u?'<input class="input u-input" type="text" inputmode="numeric" autocomplete="off" maxlength="7" data-u="'+q.u.k+'" placeholder="নিজে লিখুন" aria-label="নিজে লিখুন">':'')+
+    '</div><p class="field-error"></p></fieldset>';
+  if(q.lab) return '<div class="field" data-k="'+q.k+'" hidden><label class="label" for="'+nm+'">'+esc(q.l)+'<span class="req">*</span></label><textarea class="input" id="'+nm+'" rows="2" maxlength="'+(q.max||1500)+'" placeholder="লিখুন"></textarea><p class="field-error"></p></div>';
+  return '<div class="field" data-k="'+q.k+'" hidden><textarea class="input" id="'+nm+'" rows="3" maxlength="1500" placeholder="'+esc(q.l)+'" aria-label="'+esc(q.l)+'"></textarea><p class="field-error"></p></div>';
+}
+function panelHtml(s,i){
+  return '<div class="step-panel" data-wk="'+s+'"><span class="step-tag">ধাপ '+BN[i+1]+' — '+esc(META[s].step)+'</span>'+
+  '<div class="form-alert wk-closed" role="status" hidden><svg class="icon"><use href="#i-clock"/></svg><span></span></div>'+
+  '<div class="wk-body">'+
+   '<div class="wk-info">'+
+    '<div class="field wk-fname"><label class="label" for="wk_name_'+s+'">নাম<span class="req">*</span></label><input class="input wk-name" id="wk_name_'+s+'" type="text" maxlength="80" autocomplete="name" placeholder="আপনার পূর্ণ নাম লিখুন"><p class="field-error"></p></div>'+
+    '<div class="field wk-fmobile"><label class="label" for="wk_mobile_'+s+'">মোবাইল নম্বর<span class="req">*</span></label><input class="input wk-mobile" id="wk_mobile_'+s+'" type="tel" inputmode="tel" maxlength="20" autocomplete="tel" placeholder="01XXXXXXXXX"><span class="hint">১১ ডিজিটের নম্বর দিন (ইংরেজি বা বাংলা সংখ্যা)।</span><p class="field-error"></p></div>'+
+    '<div class="field"><span class="label">আজকের তারিখ</span><div class="input wk-date" style="display:flex;align-items:center;background:var(--bg-soft)" aria-live="polite">…</div><span class="hint">তারিখ স্বয়ংক্রিয়ভাবে ঢাকা সময় অনুযায়ী নির্ধারিত হয়; পরিবর্তন করা যায় না।</span></div>'+
+    '<div class="form-actions"><button class="btn btn-primary wk-verify" type="button">পরবর্তী ধাপ</button></div>'+
+   '</div>'+
+   '<div class="wk-qs" hidden><div class="wk-cards"></div>'+
+    '<div class="form-actions"><button class="btn btn-outline wk-back" type="button">পূর্ববর্তী</button><button class="btn btn-primary wk-submit" type="button">জমা দিন</button></div>'+
+   '</div>'+
+  '</div></div>';
+}
+function build(){
+  $("#wkStepper").innerHTML=SES.map(function(s,i){return '<li data-i="'+i+'"><span class="step-dot">'+BN[i+1]+'</span>'+esc(META[s].step)+'</li>'}).join("");
+  $("#wkPanels").innerHTML=SES.map(panelHtml).join("");
+  SES.forEach(function(s){
+    var box=$(".wk-cards",P(s));
+    W_CARDS[s].forEach(function(c,i){
+      var d=document.createElement("section");d.className="acard";d.dataset.i=i;
+      var id="wkcb_"+s+"_"+i;
+      d.innerHTML='<h4><button class="acard-h" type="button" aria-expanded="false" aria-controls="'+id+'"><span class="num">'+bn(i+1)+'</span><span class="ttl">'+esc(c.title)+'</span><span class="badge"></span><svg class="icon chev"><use href="#i-chev"/></svg></button></h4><div class="acard-b" id="'+id+'" hidden>'+c.qs.map(function(q){return qHtml(s,q)}).join("")+'<div class="acard-f"><button class="btn btn-outline nextCard" type="button">পরবর্তী কার্ড</button></div></div>';
+      box.appendChild(d);
+    });
+  });
+}
+
+/* ---- যুক্তি ---- */
+function numOk(v){var s=String(v).replace(/[০-৯]/g,function(d){return BN.indexOf(d)});return /^[1-9]\d{0,6}$/.test(s)&&+s<=W_DUROOD_MAX}
+function vis(s,q){return !q.s||q.s(ST[s].A)}
+function qOk(s,q){
+  if(!vis(s,q))return true;var A=ST[s].A;
+  if(q.t==="r")return !!A[q.k]||!!(q.u&&A[q.u.k]&&numOk(A[q.u.k]));
+  return !!A[q.k];
+}
+function cardOk(s,i){return W_CARDS[s][i].qs.every(function(q){return qOk(s,q)})}
+function unlocked(s,i){return !UI_CONFIG.lockCards||i===0||cardOk(s,i-1)}
+function clearErr(el){el.classList.remove("has-error");$$(".input.invalid",el).forEach(function(i){i.classList.remove("invalid")});var p=$(".field-error",el);if(p)p.textContent=""}
+function setErr(el,msg){el.classList.add("has-error");var i=$(".input",el);if(i)i.classList.add("invalid");var p=$(".field-error",el);if(p)p.textContent=msg}
+function sync(s){
+  var p=P(s),A=ST[s].A,cards=W_CARDS[s],done=0;
+  cards.forEach(function(c){c.qs.forEach(function(q){
+    var el=$('[data-k="'+q.k+'"]',p),v=vis(s,q);
+    if(!v&&(A[q.k]!==undefined||(q.u&&A[q.u.k]!==undefined))){
+      delete A[q.k];if(q.u)delete A[q.u.k];
+      $$("input",el).forEach(function(x){if(x.type==="radio")x.checked=false;else x.value=""});
+      var t=$("textarea",el);if(t)t.value="";
+    }
+    if(!v)clearErr(el);
+    el.hidden=!v;
+  })});
+  $$(".acard",p).forEach(function(d){
+    var i=+d.dataset.i,u=unlocked(s,i),ok=cardOk(s,i)&&u,h=$(".acard-h",d),b=$(".acard-b",d);
+    h.disabled=!u;
+    d.classList.toggle("is-done",ok&&cards[i].qs.some(function(q){return vis(s,q)&&q.t==="r"&&(A[q.k]||(q.u&&A[q.u.k]))}));
+    if(d.classList.contains("is-done"))done++;
+    $(".badge",d).textContent=!u?"লক":(d.classList.contains("is-done")?"সম্পন্ন":"");
+    if(!u){h.setAttribute("aria-expanded","false");b.hidden=true}
+    var nx=d.nextElementSibling;$(".acard-f",d).hidden=!nx||!ok;
+  });
+  if(SES[active]===s)$("#wkProgress").textContent="ধাপ "+BN[active+1]+" / "+BN[2]+" — "+META[s].step+(ST[s].verified?" — সম্পন্ন কার্ড: "+bn(done)+" / "+bn(cards.length):"");
+}
+function renderStepper(){
+  $$("#wkStepper li").forEach(function(l,n){
+    var s=SES[n];l.classList.toggle("active",n===active);l.classList.toggle("done",!!ST[s].done);
+    l.classList.toggle("locked",!!(info&&info.sessions&&info.sessions[s]&&!info.sessions[s].open));
+  });
+}
+function showStep(n){
+  active=n;$$("#wkPanels .step-panel").forEach(function(p){p.classList.toggle("active",p.dataset.wk===SES[n])});
+  sync(SES[n]);renderStepper();alertMsg("");
+}
+function alertMsg(t){var a=$("#wkAlert");if(t){$("#wkAlertText").textContent=t;a.hidden=false}else a.hidden=true}
+function showQs(s,on){var p=P(s);$(".wk-info",p).hidden=on;$(".wk-qs",p).hidden=!on;sync(s)}
+function normMobile(v){
+  v=String(v||"").replace(/[০-৯]/g,function(d){return BN.indexOf(d)}).replace(/[^\d+]/g,"").replace(/^\+/,"");
+  if(/^8801/.test(v))v=v.slice(2);
+  return /^01[3-9]\d{8}$/.test(v)?v:"";
+}
+function focusBad(el){
+  var card=el.closest&&el.closest(".acard");
+  if(card){$(".acard-h",card).setAttribute("aria-expanded","true");$(".acard-b",card).hidden=false}
+  el.scrollIntoView({block:"center",behavior:"smooth"});
+  var f=$("input,textarea",el);if(f)setTimeout(function(){f.focus({preventScroll:true})},350);
+}
+
+/* ---- সার্ভার যোগাযোগ ---- */
+function api(method,params,body,ms){
+  if(!WEEKLY_API_CONFIG.webAppUrl)return Promise.reject({code:"NO_URL"});
+  var ctl=new AbortController(),t=setTimeout(function(){ctl.abort()},ms||WEEKLY_API_CONFIG.timeoutMs);
+  var url=WEEKLY_API_CONFIG.webAppUrl+(method==="GET"?"?"+params:"");
+  var opt={method:method,signal:ctl.signal,redirect:"follow"};
+  if(method==="POST"){opt.headers={"Content-Type":"text/plain;charset=utf-8"};opt.body=JSON.stringify(body)}
+  return fetch(url,opt).then(function(r){clearTimeout(t);return r.text()}).then(function(tx){
+    try{return JSON.parse(tx)}catch(x){throw {code:"BAD_RESPONSE"}}
+  },function(){clearTimeout(t);throw {code:"NETWORK"}});
+}
+function setBodies(show){SES.forEach(function(s){$(".wk-body",P(s)).hidden=!show})}
+function loadInfo(){
+  if(!WEEKLY_API_CONFIG.webAppUrl){setBodies(false);alertMsg("সাপ্তাহিক ফর্মের সার্ভারের ঠিকানা (Web App URL) এখনও সেট করা হয়নি।");return Promise.resolve()}
+  return api("GET","action=info",null,15000).then(function(r){
+    if(!r||!r.ok||!r.sessions)throw {code:"BAD_RESPONSE"};
+    info=r;applyInfo();
+  },function(){
+    setBodies(false);alertMsg("সার্ভারের সাথে যোগাযোগ করা যায়নি। ইন্টারনেট দেখে পৃষ্ঠাটি রিফ্রেশ করুন।");
+  });
+}
+function applyInfo(){
+  alertMsg("");
+  SES.forEach(function(s){
+    var o=info.sessions[s]||{open:false,message:""},p=P(s);
+    $(".wk-closed",p).hidden=o.open;$(".wk-closed span",p).textContent=o.message||"এই ধাপ এখন বন্ধ আছে।";
+    $(".wk-body",p).hidden=!o.open;$(".wk-date",p).textContent=bnDate(info.date);
+  });
+  if(!chosen)active=info.sessions.FRIDAY.open?0:(info.sessions.MONDAY.open?1:0);
+  showStep(active);
+}
+
+/* ---- ইভেন্ট ---- */
+$("#wkPanels").addEventListener("input",function(e){
+  var pan=e.target.closest(".step-panel");if(!pan)return;
+  var s=pan.dataset.wk,A=ST[s].A,el=e.target.closest("[data-k]");
+  if(el){
+    var k=el.dataset.k;
+    if(e.target.dataset&&e.target.dataset.u){
+      var uk=e.target.dataset.u,uv=e.target.value.replace(/\s+/g," ").trim();
+      if(uv){A[uk]=uv;delete A[k];$$("input[type=radio]",el).forEach(function(x){x.checked=false})}else delete A[uk];
+    }else{
+      var v=e.target.type==="radio"?(e.target.checked?e.target.value:""):e.target.value.replace(/\s+/g," ").trim();
+      if(v)A[k]=v;else delete A[k];
+      if(v&&e.target.type==="radio"){var cu=$("input[data-u]",el);if(cu){cu.value="";delete A[cu.dataset.u]}}
+    }
+    clearErr(el);
+  }else{var f=e.target.closest(".field");if(f)clearErr(f)}
+  sync(s);
+});
+$("#wkPanels").addEventListener("click",function(e){
+  var pan=e.target.closest(".step-panel");if(!pan)return;var s=pan.dataset.wk;
+  var h=e.target.closest(".acard-h");
+  if(h&&!h.disabled){var o=h.getAttribute("aria-expanded")==="true";h.setAttribute("aria-expanded",String(!o));$("#"+h.getAttribute("aria-controls")).hidden=o;return}
+  var nc=e.target.closest(".nextCard");
+  if(nc){var d=nc.closest(".acard"),nx=d.nextElementSibling;$(".acard-h",d).setAttribute("aria-expanded","false");$(".acard-b",d).hidden=true;
+    if(nx&&!$(".acard-h",nx).disabled){$(".acard-h",nx).setAttribute("aria-expanded","true");$(".acard-b",nx).hidden=false;nx.scrollIntoView({block:"start"})}return}
+  if(e.target.closest(".wk-verify")){verify(s);return}
+  if(e.target.closest(".wk-back")){if(!wbusy){ST[s].verified=false;showQs(s,false)}return}
+  if(e.target.closest(".wk-submit")){trySubmit(s)}
+});
+$("#wkPanels").addEventListener("submit",function(e){e.preventDefault()});
+$("#wkStepper").addEventListener("click",function(e){var li=e.target.closest("li");if(li&&!wbusy){chosen=true;showStep(+li.dataset.i)}});
+
+function verify(s){
+  if(wbusy)return;
+  var p=P(s),f1=$(".wk-fname",p),f2=$(".wk-fmobile",p),bad=[];
+  clearErr(f1);clearErr(f2);
+  var nm=$(".wk-name",p).value.replace(/\s+/g," ").trim(),mb=$(".wk-mobile",p).value;
+  if(!nm){setErr(f1,"এই তথ্যটি পূরণ করুন।");bad.push(f1)}
+  if(!normMobile(mb)){setErr(f2,mb.trim()?"১১ ডিজিটের সঠিক মোবাইল নম্বর দিন।":"এই তথ্যটি পূরণ করুন।");bad.push(f2)}
+  if(bad.length){alertMsg("অনুগ্রহ করে লাল চিহ্নিত তথ্যগুলো পূরণ করুন।");focusBad(bad[0]);return}
+  alertMsg("");wbusy=true;var btn=$(".wk-verify",p);btn.disabled=true;btn.textContent="যাচাই হচ্ছে…";
+  api("POST","",{action:"verify",mobile:mb},20000).then(function(r){
+    wbusy=false;btn.disabled=false;btn.textContent="পরবর্তী ধাপ";
+    if(r&&r.ok&&r.authorized){
+      ST[s].verified=true;showQs(s,true);
+      var first=$(".acard-h",$(".acard",p));first.setAttribute("aria-expanded","true");$(".acard-b",$(".acard",p)).hidden=false;
+      $(".wk-qs",p).scrollIntoView({block:"start"});return;
+    }
+    setErr(f2,(r&&r.message)||"মোবাইল নম্বর যাচাই করা যায়নি।");alertMsg("মোবাইল নম্বর যাচাই সম্পন্ন হয়নি।");focusBad(f2);
+  },function(err){
+    wbusy=false;btn.disabled=false;btn.textContent="পরবর্তী ধাপ";
+    alertMsg(err&&err.code==="NO_URL"?"সাপ্তাহিক ফর্মের সার্ভারের ঠিকানা এখনও সেট করা হয়নি।":"সার্ভারের সাথে যোগাযোগ করা যায়নি। ইন্টারনেট দেখে আবার চেষ্টা করুন।");
+  });
+}
+function validateAll(s){
+  var bad=[],p=P(s),A=ST[s].A;
+  W_CARDS[s].forEach(function(c){c.qs.forEach(function(q){
+    if(qOk(s,q))return;
+    var el=$('[data-k="'+q.k+'"]',p),msg;
+    if(q.u&&A[q.u.k]&&!numOk(A[q.u.k]))msg="সঠিক সংখ্যা লিখুন (১ থেকে "+bn("100000")+" এর মধ্যে পূর্ণসংখ্যা)।";
+    else msg=q.t==="r"?"এই প্রশ্নের উত্তর নির্বাচন করুন।":"অনুগ্রহ করে এই প্রশ্নের উত্তর লিখুন।";
+    setErr(el,msg);bad.push(el);
+  })});
+  return bad;
+}
+function trySubmit(s){
+  if(wbusy)return;
+  var bad=validateAll(s);
+  if(bad.length){alertMsg("অনুগ্রহ করে লাল চিহ্নিত প্রশ্নগুলোর উত্তর দিন।");focusBad(bad[0]);return}
+  alertMsg("");submit(s);
+}
+
+/* ---- জমা ---- */
+function openM(id){lastFocus=document.activeElement;var m=$("#"+id);m.classList.add("open");m.setAttribute("aria-hidden","false");document.body.classList.add("no-scroll");var f=$("[data-autofocus]",m);if(f)f.focus()}
+function closeM(){$$(".modal.open").forEach(function(m){m.classList.remove("open");m.setAttribute("aria-hidden","true")});document.body.classList.remove("no-scroll");if(lastFocus&&lastFocus.focus)lastFocus.focus()}
+function submit(s){
+  if(wbusy)return;wbusy=true;curS=s;var st=ST[s],p=P(s);
+  st.rid=st.rid||("w"+Date.now().toString(36)+Math.random().toString(36).slice(2,10));
+  $("#wkLoader").classList.add("open");
+  var body={action:"submit",session:s,requestId:st.rid,name:$(".wk-name",p).value.replace(/\s+/g," ").trim(),mobile:$(".wk-mobile",p).value,answers:{}};
+  W_CARDS[s].forEach(function(c){c.qs.forEach(function(q){
+    if(!vis(s,q))return;
+    if(st.A[q.k])body.answers[q.k]=st.A[q.k];
+    if(q.u&&st.A[q.u.k])body.answers[q.u.k]=st.A[q.u.k];
+  })});
+  api("POST","",body).then(function(r){done(s,r)},function(err){
+    if(err&&err.code==="NO_URL")return fail("সাপ্তাহিক ফর্মের সার্ভারের ঠিকানা (Web App URL) এখনও সেট করা হয়নি।");
+    return recover(s,0);
+  });
+}
+function recover(s,n){
+  return api("GET","action=status&requestId="+encodeURIComponent(ST[s].rid),null,15000).then(function(r){
+    if(r&&r.ok&&r.status==="success")return done(s,r);
+    if(r&&r.ok&&r.status==="unknown"&&n>=WEEKLY_API_CONFIG.statusRetries)return fail("আপনার তথ্য সংরক্ষিত হয়েছে বলে নিশ্চিত হওয়া যায়নি। আবার চেষ্টা করুন—একই অনুরোধ দুবার জমা হবে না।");
+    if(r&&r.ok&&r.status==="unknown")return new Promise(function(res){setTimeout(res,3000)}).then(function(){return recover(s,n+1)});
+    return fail("আপনার তথ্য সংরক্ষিত হয়েছে বলে নিশ্চিত হওয়া যায়নি। আবার চেষ্টা করুন।");
+  },function(){
+    if(n<WEEKLY_API_CONFIG.statusRetries)return new Promise(function(res){setTimeout(res,2000)}).then(function(){return recover(s,n+1)});
+    return fail("ইন্টারনেট বা সার্ভারের সমস্যায় ফলাফল নিশ্চিত করা যায়নি। আপনার তথ্য সংরক্ষিত হয়েছে বলে ধরা যাচ্ছে না। আবার চেষ্টা করুন।");
+  });
+}
+function done(s,r){
+  $("#wkLoader").classList.remove("open");wbusy=false;
+  if(r&&r.ok&&r.status==="success"){
+    ST[s].rid=null;ST[s].done=true;renderStepper();
+    $("#wkOkText").textContent="আপনার "+META[s].day+"ের আমলশিট সফলভাবে জমা হয়েছে।";
+    $("#wkOkDate").textContent="জমার তারিখ: "+bnDate(r.date);openM("wkOkModal");return;
+  }
+  var terminal=r&&["DUPLICATE","CLOSED","INVALID","NOT_AUTHORIZED","INACTIVE","AUTH_SETUP","SETUP_MISMATCH"].indexOf(r.code)>=0;
+  if(terminal)ST[s].rid=null;
+  fail((r&&r.message)||"দুঃখিত! আপনার আমলশিট জমা হয়নি। আপনার তথ্য সংরক্ষিত হয়েছে বলে নিশ্চিত হওয়া যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।",terminal?r.code:null);
+}
+function fail(msg,code){
+  $("#wkLoader").classList.remove("open");wbusy=false;
+  $("#wkErrMsg").textContent=msg;$("#wkRetry").hidden=!!code;
+  openM("wkErrModal");
+}
+$("#wkRetry").addEventListener("click",function(){closeM();if(curS)submit(curS)});
+function resetSession(s){
+  ST[s]=freshState();var p=P(s);
+  $$("input[type=radio]",p).forEach(function(x){x.checked=false});
+  $$("textarea,.u-input,.wk-name,.wk-mobile",p).forEach(function(x){x.value=""});
+  $$(".acard-h",p).forEach(function(h){h.setAttribute("aria-expanded","false")});$$(".acard-b",p).forEach(function(b){b.hidden=true});
+  $$(".field",p).forEach(clearErr);
+  showQs(s,false);
+}
+document.addEventListener("click",function(e){
+  if(e.target.closest("[data-wkhome]")){
+    e.preventDefault();closeM();if(curS)resetSession(curS);wbusy=false;chosen=false;
+    location.hash="#home";var h=$("#home");if(h)h.scrollIntoView({block:"start"});loadInfo();
+  }
+});
+build();showStep(0);loadInfo();
+})();
+</script>
+<!-- WEEKLY FORMS LOGIC END -->
 </body>
 </html>
