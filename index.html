@@ -1131,86 +1131,27 @@ function loadInfo(){
 
 });
 }
-function applyInfo() {
+function applyInfo(){
 
-  alertMsg("");
+  // সার্ভার থেকে প্রাপ্ত ঢাকা তারিখ দেখানো
+  $("#dateView").textContent = bnDate(info.date);
 
-  SES.forEach(function(s) {
+  $("#heroDate").textContent =
+    "আজকের তারিখ: " + bnDate(info.date);
 
-    var o = info.sessions[s] || {
-      open: false,
-      message: ""
-    };
+  // Daily Form খোলা বা বন্ধ নির্ধারণ
+  var closed = !info.open;
 
-    var p = P(s);
+  $("#closedBox").hidden = !closed;
+  $("#formWrap").hidden = closed;
 
-    $(".wk-closed", p).hidden = o.open;
-
-    $(".wk-closed span", p).textContent =
-      o.message || "এই ধাপ এখন বন্ধ আছে।";
-
-    $(".wk-body", p).hidden = !o.open;
-
-  });
-
-  if (!chosen) {
-    active = info.sessions.FRIDAY.open
-      ? 0
-      : (info.sessions.MONDAY.open ? 1 : 0);
+  if (closed) {
+    $("#closedText").textContent =
+      info.closedMessage ||
+      "ফর্ম প্রতিদিন ঢাকা সময় সন্ধ্যা ৬টা থেকে রাত ১২টা পর্যন্ত খোলা থাকে।";
   }
-if(!chosen){
 
-  var today = Number(info.weekday);
-
-  if(today === 1){
-    // সোমবার
-    active = 1;
-  }
-  else if(today === 5){
-    // শুক্রবার
-    active = 0;
-  }
-  else{
-    // অন্য দিন
-    active = 0;
-  }
 }
-
-showStep(active);
-  showStep(active);
-
-  // কেবল খোলা সেশনগুলোতে Daily Submission যাচাই
-  SES.forEach(function(s) {
-
-    var o = info.sessions[s];
-
-    if (o && o.open) {
-      verify(s);
-    }
-
-  });
-}
- // Daily Submission সফল হলে Weekly স্বয়ংক্রিয়ভাবে পুনরায় যাচাই
-document.addEventListener("dailyAmalSubmitted", function() {
-
-  if (!info) {
-    loadInfo();
-    return;
-  }
-
-  SES.forEach(function(s) {
-
-    var o = info.sessions && info.sessions[s];
-
-    if (o && o.open) {
-      ST[s].verified = false;
-      verify(s);
-    }
-
-  });
-
-});
-
 
 // Daily পরিচয় পরিবর্তন হলে Weekly বন্ধ
 document.addEventListener("dailyIdentityCleared", function() {
@@ -1609,6 +1550,26 @@ function validateAll(s){
   })});
   return bad;
 }
+ // Daily Submission সফল হলে Weekly পুনরায় যাচাই
+document.addEventListener("dailyAmalSubmitted", function() {
+
+  if (!info) {
+    loadInfo();
+    return;
+  }
+
+  SES.forEach(function(s) {
+
+    var o = info.sessions && info.sessions[s];
+
+    if (o && o.open) {
+      ST[s].verified = false;
+      verify(s);
+    }
+
+  });
+
+});
 function trySubmit(s){
   if(wbusy)return;
   var bad=validateAll(s);
