@@ -1074,8 +1074,22 @@ function verifyMobile(){
   api("POST","",{action:"verify",mobile:$("#f_mobile").value},20000).then(function(r){
     busy=false;
     if(r&&r.ok&&r.authorized){show(1);return}
-    sync();var f=$("#fld-mobile");setErr(f,(r&&r.message)||"মোবাইল নম্বর যাচাই করা যায়নি।");
-    alertMsg("মোবাইল নম্বর যাচাই সম্পন্ন হয়নি।");focusBad(f);
+    sync();
+
+var f = $("#fld-mobile");
+
+var message =
+  (r && (r.code === "NOT_AUTHORIZED" || r.authorized === false))
+  ? "দুঃখিত! আপনি আমাদের অনুমোদিত ব্যবহারকারী নন। আমলশিট পূরণের জন্য অনুগ্রহ করে আমাদের দায়িত্বশীলদের সঙ্গে যোগাযোগ করুন।"
+  : "আপনার দেওয়া তথ্য যাচাই করা যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।";
+
+setErr(f, message);
+
+alertMsg(
+  "আপনি আমাদের অনুমোদিত ব্যবহারকারী না হলে আমলশিট পূরণ করতে পারবেন না।"
+);
+
+focusBad(f);
   },function(err){
     busy=false;sync();
     alertMsg(err&&err.code==="NO_URL"?"সার্ভারের ঠিকানা (Web App URL) এখনও সেট করা হয়নি।":"সার্ভারের সাথে যোগাযোগ করা যায়নি। ইন্টারনেট দেখে আবার চেষ্টা করুন।");
@@ -1289,7 +1303,11 @@ function panelHtml(s,i){
 '<button class="btn btn-primary wk-submit" type="button">জমা দিন</button>'+
 '</div>'+
 '</div>'+
-    '<div class="form-actions"><button class="btn btn-outline wk-back" type="button">পূর্ববর্তী</button><button class="btn btn-primary wk-submit" type="button">জমা দিন</button></div>'+
+    '<div class="form-actions">
+  <button class="btn btn-outline wk-back" type="button">
+    পূর্ববর্তী
+  </button>
+</div>'+
    '</div>'+
   '</div></div>';
 }
@@ -1424,7 +1442,35 @@ $("#wkPanels").addEventListener("click",function(e){
   if(nc){var d=nc.closest(".acard"),nx=d.nextElementSibling;$(".acard-h",d).setAttribute("aria-expanded","false");$(".acard-b",d).hidden=true;
     if(nx&&!$(".acard-h",nx).disabled){$(".acard-h",nx).setAttribute("aria-expanded","true");$(".acard-b",nx).hidden=false;nx.scrollIntoView({block:"start"})}return}
   if(e.target.closest(".wk-verify")){verify(s);return}
-  if(e.target.closest(".wk-back")){if(!wbusy){ST[s].verified=false;showQs(s,false)}return}
+ if(e.target.closest(".wk-back")){
+
+  if(wbusy) return;
+
+  if(s === "MONDAY"){
+
+    // সোমবার থেকে শুক্রবারের আমলে ফিরে যাবে
+    chosen = true;
+    showStep(0);
+
+    $("#wkCard").scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+
+  } else if(s === "FRIDAY"){
+
+    // শুক্রবার থেকে Daily Amal Section-এ ফিরে যাবে
+    location.hash = "#registration";
+
+    $("#registration").scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+
+  }
+
+  return;
+}
   if(e.target.closest(".wk-submit")){trySubmit(s)}
 });
 $("#wkPanels").addEventListener("submit",function(e){e.preventDefault()});
@@ -1571,10 +1617,43 @@ document.addEventListener("dailyAmalSubmitted", function() {
 
 });
 function trySubmit(s){
-  if(wbusy)return;
-  var bad=validateAll(s);
-  if(bad.length){alertMsg("অনুগ্রহ করে লাল চিহ্নিত প্রশ্নগুলোর উত্তর দিন।");focusBad(bad[0]);return}
-  alertMsg("");submit(s);
+ 
+ if(ST[s].done) return;
+ 
+  if(wbusy) return;
+
+  if(ST[s].done){
+    alertMsg("আপনার এই দিনের আমলশিট ইতোমধ্যে জমা হয়েছে।");
+    return;
+  }
+
+  var identity = getDailyIdentity();
+
+  if(!identity || !ST[s].verified){
+
+    ST[s].verified = false;
+    showQs(s, false);
+
+    var msg = $(".wk-access-message", P(s));
+
+    if(msg){
+      msg.textContent =
+        "অনুগ্রহ করে প্রথমে Daily Amal Sheet সফলভাবে পূরণ ও জমা দিন। এরপর আপনি Weekly Amal Sheet পূরণ করতে পারবেন।";
+    }
+
+    return;
+  }
+
+  var bad = validateAll(s);
+
+  if(bad.length){
+    alertMsg("অনুগ্রহ করে লাল চিহ্নিত প্রশ্নগুলোর উত্তর দিন।");
+    focusBad(bad[0]);
+    return;
+  }
+
+  alertMsg("");
+  submit(s);
 }
 
 /* ---- জমা ---- */
@@ -1634,6 +1713,12 @@ function done(s,r){
   $("#wkLoader").classList.remove("open");wbusy=false;
   if(r&&r.ok&&r.status==="success"){
     ST[s].rid=null;ST[s].done=true;renderStepper();
+   var panel = P(s);
+
+$$(".wk-submit", panel).forEach(function(btn){
+  btn.disabled = true;
+  btn.textContent = "ইতোমধ্যে জমা হয়েছে";
+});
     $("#wkOkText").textContent="আপনার "+META[s].day+"ের আমলশিট সফলভাবে জমা হয়েছে।";
     $("#wkOkDate").textContent="জমার তারিখ: "+bnDate(r.date);openM("wkOkModal");return;
   }
