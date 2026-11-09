@@ -1257,6 +1257,37 @@ function resetForm(){
   $$("#amalForm .field").forEach(clearErr);
   show(0,true);loadInfo();
 }
+ // Weekly থেকে Daily-এর ফজরের সালাতের অংশে যাওয়া
+window.openDailyPrayerSection = function(){
+
+  closeM();
+
+  // Daily-এর দ্বিতীয় ধাপ: পাঁচ ওয়াক্ত সালাত
+  show(1,true);
+
+  // প্রথম কার্ড হচ্ছে ফজরের সালাত
+  var firstCard = $("#cards1 .acard");
+
+  if(firstCard){
+
+    var header = $(".acard-h",firstCard);
+    var body = $(".acard-b",firstCard);
+
+    if(header && !header.disabled){
+
+      header.setAttribute("aria-expanded","true");
+      body.hidden = false;
+
+    }
+
+  }
+
+  $("#registration").scrollIntoView({
+    behavior:"smooth",
+    block:"start"
+  });
+
+};
 show(0,true);loadInfo();
 })();
 </script>
@@ -1292,24 +1323,43 @@ function qHtml(s,q){
   return '<div class="field" data-k="'+q.k+'" hidden><textarea class="input" id="'+nm+'" rows="3" maxlength="1500" placeholder="'+esc(q.l)+'" aria-label="'+esc(q.l)+'"></textarea><p class="field-error"></p></div>';
 }
 function panelHtml(s,i){
-  return '<div class="step-panel" data-wk="'+s+'"><span class="step-tag">ধাপ '+BN[i+1]+' — '+esc(META[s].step)+'</span>'+
-  '<div class="form-alert wk-closed" role="status" hidden><svg class="icon"><use href="#i-clock"/></svg><span></span></div>'+
-  '<div class="wk-body">'+
-   '<div class="wk-info">'+
-'<p class="hint wk-access-message" role="status">প্রথমে আজকের দৈনিক আমলশিট সফলভাবে জমা দিন।</p>'+
-'</div>'+
-'<div class="wk-qs" hidden><div class="wk-cards"></div>'+
-'<div class="form-actions">'+
-'<button class="btn btn-primary wk-submit" type="button">জমা দিন</button>'+
-'</div>'+
-'</div>'+
-    '<div class="form-actions">
-  <button class="btn btn-outline wk-back" type="button">
-    পূর্ববর্তী
-  </button>
-</div>'+
-   '</div>'+
-  '</div></div>';
+
+  return '<div class="step-panel" data-wk="'+s+'">'+
+    '<span class="step-tag">ধাপ '+BN[i+1]+' — '+esc(META[s].step)+'</span>'+
+
+    '<div class="form-alert wk-closed" role="status" hidden>'+
+      '<svg class="icon"><use href="#i-clock"/></svg><span></span>'+
+    '</div>'+
+
+    '<div class="wk-body">'+
+
+      '<div class="wk-info">'+
+        '<p class="hint wk-access-message" role="status">'+
+        'প্রথমে আজকের দৈনিক আমলশিট সফলভাবে জমা দিন।'+
+        '</p>'+
+      '</div>'+
+
+      '<div class="wk-qs" hidden>'+
+        '<div class="wk-cards"></div>'+
+      '</div>'+
+
+    '</div>'+
+
+    // Previous সব সময় থাকবে
+    // Submit শুধু প্রশ্নগুলো খুললে দেখাবে
+    '<div class="form-actions wk-actions">'+
+
+      '<button class="btn btn-outline wk-back" type="button">'+
+        'পূর্ববর্তী'+
+      '</button>'+
+
+      '<button class="btn btn-primary wk-submit" type="button" hidden>'+
+        'জমা দিন'+
+      '</button>'+
+
+    '</div>'+
+
+  '</div>';
 }
 function build(){
   $("#wkStepper").innerHTML=SES.map(function(s,i){return '<li data-i="'+i+'"><span class="step-dot">'+BN[i+1]+'</span>'+esc(META[s].step)+'</li>'}).join("");
@@ -1371,7 +1421,28 @@ function showStep(n){
   sync(SES[n]);renderStepper();alertMsg("");
 }
 function alertMsg(t){var a=$("#wkAlert");if(t){$("#wkAlertText").textContent=t;a.hidden=false}else a.hidden=true}
-function showQs(s,on){var p=P(s);$(".wk-info",p).hidden=on;$(".wk-qs",p).hidden=!on;sync(s)}
+function showQs(s,on){
+
+  var p = P(s);
+
+  var allowed = !!on && !ST[s].done;
+
+  // Daily পূরণ না করলে নির্দেশনা দেখাবে
+  $(".wk-info",p).hidden = allowed;
+
+  // অনুমতি পেলে প্রশ্ন দেখাবে
+  $(".wk-qs",p).hidden = !allowed;
+
+  // Submit শুধু প্রশ্ন দৃশ্যমান হলেই আসবে
+  var submitBtn = $(".wk-submit",p);
+
+  if(submitBtn){
+    submitBtn.hidden = !allowed;
+    submitBtn.disabled = !!ST[s].done;
+  }
+
+  sync(s);
+}
 function normMobile(v){
   v=String(v||"").replace(/[০-৯]/g,function(d){return BN.indexOf(d)}).replace(/[^\d+]/g,"").replace(/^\+/,"");
   if(/^8801/.test(v))v=v.slice(2);
@@ -1617,15 +1688,44 @@ document.addEventListener("dailyAmalSubmitted", function() {
 
 });
 function trySubmit(s){
- 
- if(ST[s].done) return;
- 
+
   if(wbusy) return;
 
+  // আগে থেকেই জমা দেওয়া থাকলে
   if(ST[s].done){
     alertMsg("আপনার এই দিনের আমলশিট ইতোমধ্যে জমা হয়েছে।");
     return;
   }
+
+  // Daily Submission অনুমোদন না থাকলে
+  if(!ST[s].verified){
+
+    alertMsg("");
+
+    showQs(s,false);
+
+    // নেপথ্যে আবার Daily যাচাই করবে
+    verify(s);
+
+    return;
+  }
+
+  // এখানে কেবল দৃশ্যমান প্রশ্নগুলোর উত্তর যাচাই হবে
+  var bad = validateAll(s);
+
+  if(bad.length){
+
+    alertMsg("অনুগ্রহ করে লাল চিহ্নিত প্রশ্নগুলোর উত্তর দিন।");
+
+    focusBad(bad[0]);
+
+    return;
+  }
+
+  alertMsg("");
+
+  submit(s);
+}
 
   var identity = getDailyIdentity();
 
