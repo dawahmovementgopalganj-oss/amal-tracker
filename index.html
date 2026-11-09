@@ -779,7 +779,7 @@ document.getElementById("supportCall").href="tel:+"+d;})();
   <div class="ok-badge"><svg class="icon"><use href="#i-check"/></svg></div>
   <h3 id="wkOkTitle">আলহামদুলিল্লাহ!</h3>
   <p id="wkOkText"></p>
-  <p class="modal-note"><b id="wkOkDate"></b></p>
+  $("#wkOkDate").textContent="জমার তারিখ: "+bnDate(r.date);
   <div class="modal-actions" style="grid-template-columns:1fr"><button type="button" class="btn btn-primary" data-wkhome data-autofocus>হোমে ফিরে যান</button></div>
 </div></div>
 <div class="modal" id="wkErrModal" role="dialog" aria-modal="true" aria-labelledby="wkErrTitle" aria-hidden="true"><div class="modal-box">
@@ -1027,6 +1027,15 @@ function show(n,init){
 /* ---- ইভেন্ট ---- */
 var form=$("#amalForm");
 form.addEventListener("input",function(e){
+ if (e.target.id === "f_name" || e.target.id === "f_mobile") {
+  try {
+    sessionStorage.removeItem("dailyAmalIdentity");
+  } catch(err) {}
+
+  document.dispatchEvent(
+    new Event("dailyIdentityCleared")
+  );
+}
   var el=e.target.closest("[data-id]");
   if(el){
     if(e.target.dataset&&e.target.dataset.u){
@@ -1109,11 +1118,90 @@ function loadInfo(){
     $("#dateView").textContent=bnDate(d)+" (প্রদর্শনের জন্য)";$("#heroDate").textContent=bnDate(d);
   });
 }
-function applyInfo(){
-  $("#dateView").textContent=bnDate(info.date);$("#heroDate").textContent="আজকের তারিখ: "+bnDate(info.date);
-  var closed=!info.open;$("#closedBox").hidden=!closed;$("#formWrap").hidden=closed;
-  if(closed)$("#closedText").textContent=info.closedMessage||"ফর্ম এখন বন্ধ আছে।";
+function applyInfo() {
+
+  alertMsg("");
+
+  SES.forEach(function(s) {
+
+    var o = info.sessions[s] || {
+      open: false,
+      message: ""
+    };
+
+    var p = P(s);
+
+    $(".wk-closed", p).hidden = o.open;
+
+    $(".wk-closed span", p).textContent =
+      o.message || "এই ধাপ এখন বন্ধ আছে।";
+
+    $(".wk-body", p).hidden = !o.open;
+
+  });
+
+  if (!chosen) {
+    active = info.sessions.FRIDAY.open
+      ? 0
+      : (info.sessions.MONDAY.open ? 1 : 0);
+  }
+
+  showStep(active);
+
+  // কেবল খোলা সেশনগুলোতে Daily Submission যাচাই
+  SES.forEach(function(s) {
+
+    var o = info.sessions[s];
+
+    if (o && o.open) {
+      verify(s);
+    }
+
+  });
 }
+ // Daily Submission সফল হলে Weekly স্বয়ংক্রিয়ভাবে পুনরায় যাচাই
+document.addEventListener("dailyAmalSubmitted", function() {
+
+  if (!info) {
+    loadInfo();
+    return;
+  }
+
+  SES.forEach(function(s) {
+
+    var o = info.sessions && info.sessions[s];
+
+    if (o && o.open) {
+      ST[s].verified = false;
+      verify(s);
+    }
+
+  });
+
+});
+
+
+// Daily পরিচয় পরিবর্তন হলে Weekly বন্ধ
+document.addEventListener("dailyIdentityCleared", function() {
+
+  SES.forEach(function(s) {
+
+    ST[s].verified = false;
+    ST[s].mobile = "";
+    ST[s].checking = false;
+
+    showQs(s, false);
+
+    var msg = $(".wk-access-message", P(s));
+
+    if (msg) {
+      msg.textContent =
+        "প্রথমে আজকের দৈনিক আমলশিট সফলভাবে জমা দিন।";
+    }
+
+  });
+
+});
 function submit(){
   if(busy)return;busy=true;sync();rid=rid||("r"+Date.now().toString(36)+Math.random().toString(36).slice(2,10));
   $("#loader").classList.add("open");
@@ -1137,7 +1225,32 @@ function recover(n){
 }
 function done(r){
   $("#loader").classList.remove("open");busy=false;
-  if(r&&r.ok&&r.status==="success"){rid=null;$("#okDate").textContent="জমার তারিখ: "+bnDate(r.date);openM("okModal");return}
+  if(r&&r.ok&&r.status==="success"){
+
+  // Daily Submission সফল হওয়ার পর পরিচয় সংরক্ষণ
+  var identity = {
+    name: $("#f_name").value.replace(/\s+/g," ").trim(),
+    mobile: normMobile($("#f_mobile").value),
+    date: r.date
+  };
+
+  window.__dailyAmalIdentity = identity;
+
+  try {
+    sessionStorage.setItem(
+      "dailyAmalIdentity",
+      JSON.stringify(identity)
+    );
+  } catch(e) {}
+
+  // Weekly Section-কে জানানো যে Daily Submission সফল
+  document.dispatchEvent(new Event("dailyAmalSubmitted"));
+
+  rid = null;
+  $("#okDate").textContent = "জমার তারিখ: " + bnDate(r.date);
+  openM("okModal");
+  return;
+}
   var msg={DUPLICATE:"আপনি আজকের আমলশিট ইতোমধ্যে জমা দিয়েছেন। আগামী দিন আবার নতুন আমলশিট জমা দিতে পারবেন।",
     CLOSED:(r&&r.message)||"ফর্ম এখন বন্ধ আছে।",NOT_AUTHORIZED:(r&&r.message)||"এই মোবাইল নম্বরটি অনুমোদিত নয়।",INACTIVE:(r&&r.message)||"এই মোবাইল নম্বরটি সক্রিয় নয়।",INVALID:(r&&r.message)||"তথ্য সঠিক নয়। অনুগ্রহ করে যাচাই করে আবার চেষ্টা করুন।"}[r&&r.code];
   if(r&&(r.code==="DUPLICATE"||r.code==="CLOSED"||r.code==="INVALID"||r.code==="NOT_AUTHORIZED"||r.code==="INACTIVE"))rid=null;
@@ -1197,12 +1310,13 @@ function panelHtml(s,i){
   '<div class="form-alert wk-closed" role="status" hidden><svg class="icon"><use href="#i-clock"/></svg><span></span></div>'+
   '<div class="wk-body">'+
    '<div class="wk-info">'+
-    '<div class="field wk-fname"><label class="label" for="wk_name_'+s+'">নাম<span class="req">*</span></label><input class="input wk-name" id="wk_name_'+s+'" type="text" maxlength="80" autocomplete="name" placeholder="আপনার পূর্ণ নাম লিখুন"><p class="field-error"></p></div>'+
-    '<div class="field wk-fmobile"><label class="label" for="wk_mobile_'+s+'">মোবাইল নম্বর<span class="req">*</span></label><input class="input wk-mobile" id="wk_mobile_'+s+'" type="tel" inputmode="tel" maxlength="20" autocomplete="tel" placeholder="01XXXXXXXXX"><span class="hint">১১ ডিজিটের নম্বর দিন (ইংরেজি বা বাংলা সংখ্যা)।</span><p class="field-error"></p></div>'+
-    '<div class="field"><span class="label">আজকের তারিখ</span><div class="input wk-date" style="display:flex;align-items:center;background:var(--bg-soft)" aria-live="polite">…</div><span class="hint">তারিখ স্বয়ংক্রিয়ভাবে ঢাকা সময় অনুযায়ী নির্ধারিত হয়; পরিবর্তন করা যায় না।</span></div>'+
-    '<div class="form-actions"><button class="btn btn-primary wk-verify" type="button">পরবর্তী ধাপ</button></div>'+
-   '</div>'+
-   '<div class="wk-qs" hidden><div class="wk-cards"></div>'+
+'<p class="hint wk-access-message" role="status">প্রথমে আজকের দৈনিক আমলশিট সফলভাবে জমা দিন।</p>'+
+'</div>'+
+'<div class="wk-qs" hidden><div class="wk-cards"></div>'+
+'<div class="form-actions">'+
+'<button class="btn btn-primary wk-submit" type="button">জমা দিন</button>'+
+'</div>'+
+'</div>'+
     '<div class="form-actions"><button class="btn btn-outline wk-back" type="button">পূর্ববর্তী</button><button class="btn btn-primary wk-submit" type="button">জমা দিন</button></div>'+
    '</div>'+
   '</div></div>';
@@ -1344,26 +1458,113 @@ $("#wkPanels").addEventListener("click",function(e){
 $("#wkPanels").addEventListener("submit",function(e){e.preventDefault()});
 $("#wkStepper").addEventListener("click",function(e){var li=e.target.closest("li");if(li&&!wbusy){chosen=true;showStep(+li.dataset.i)}});
 
-function verify(s){
-  if(wbusy)return;
-  var p=P(s),f1=$(".wk-fname",p),f2=$(".wk-fmobile",p),bad=[];
-  clearErr(f1);clearErr(f2);
-  var nm=$(".wk-name",p).value.replace(/\s+/g," ").trim(),mb=$(".wk-mobile",p).value;
-  if(!nm){setErr(f1,"এই তথ্যটি পূরণ করুন।");bad.push(f1)}
-  if(!normMobile(mb)){setErr(f2,mb.trim()?"১১ ডিজিটের সঠিক মোবাইল নম্বর দিন।":"এই তথ্যটি পূরণ করুন।");bad.push(f2)}
-  if(bad.length){alertMsg("অনুগ্রহ করে লাল চিহ্নিত তথ্যগুলো পূরণ করুন।");focusBad(bad[0]);return}
-  alertMsg("");wbusy=true;var btn=$(".wk-verify",p);btn.disabled=true;btn.textContent="যাচাই হচ্ছে…";
-  api("POST","",{action:"verify",mobile:mb},20000).then(function(r){
-    wbusy=false;btn.disabled=false;btn.textContent="পরবর্তী ধাপ";
-    if(r&&r.ok&&r.authorized){
-      ST[s].verified=true;showQs(s,true);
-      var first=$(".acard-h",$(".acard",p));first.setAttribute("aria-expanded","true");$(".acard-b",$(".acard",p)).hidden=false;
-      $(".wk-qs",p).scrollIntoView({block:"start"});return;
+function getDailyIdentity() {
+
+  var saved = null;
+
+  try {
+    saved = JSON.parse(
+      sessionStorage.getItem("dailyAmalIdentity") || "null"
+    );
+  } catch(e) {}
+
+  if (!saved) return null;
+
+  var mobile = normMobile(saved.mobile);
+
+  if (!mobile) return null;
+
+  return {
+    name: saved.name || "",
+    mobile: mobile,
+    date: saved.date || ""
+  };
+}
+
+
+function verify(s) {
+
+  var p = P(s);
+  var msg = $(".wk-access-message", p);
+  var identity = getDailyIdentity();
+
+  if (!identity) {
+    ST[s].verified = false;
+    ST[s].mobile = "";
+
+    showQs(s, false);
+
+    if (msg) {
+      msg.textContent =
+        "প্রথমে আজকের দৈনিক আমলশিট সফলভাবে জমা দিন।";
     }
-    setErr(f2,(r&&r.message)||"মোবাইল নম্বর যাচাই করা যায়নি।");alertMsg("মোবাইল নম্বর যাচাই সম্পন্ন হয়নি।");focusBad(f2);
-  },function(err){
-    wbusy=false;btn.disabled=false;btn.textContent="পরবর্তী ধাপ";
-    alertMsg(err&&err.code==="NO_URL"?"সাপ্তাহিক ফর্মের সার্ভারের ঠিকানা এখনও সেট করা হয়নি।":"সার্ভারের সাথে যোগাযোগ করা যায়নি। ইন্টারনেট দেখে আবার চেষ্টা করুন।");
+
+    return;
+  }
+
+  if (ST[s].checking ||
+      (ST[s].verified && ST[s].mobile === identity.mobile)) {
+    return;
+  }
+
+  ST[s].checking = true;
+  ST[s].verified = false;
+
+  if (msg) {
+    msg.textContent = "দৈনিক আমলশিটের জমা যাচাই হচ্ছে...";
+  }
+
+  showQs(s, false);
+
+  api("POST", "", {
+    action: "verify",
+    mobile: identity.mobile
+  }, 20000).then(function(r) {
+
+    ST[s].checking = false;
+
+    if (r && r.ok && r.authorized && r.dailySubmitted) {
+
+      ST[s].verified = true;
+      ST[s].mobile = identity.mobile;
+
+      showQs(s, true);
+
+      var firstCard = $(".acard", p);
+
+      if (firstCard) {
+        var firstButton = $(".acard-h", firstCard);
+
+        firstButton.setAttribute("aria-expanded", "true");
+
+        $(".acard-b", firstCard).hidden = false;
+      }
+
+      return;
+    }
+
+    ST[s].verified = false;
+
+    showQs(s, false);
+
+    if (msg) {
+      msg.textContent =
+        (r && r.message) ||
+        "প্রথমে আজকের দৈনিক আমলশিট সফলভাবে জমা দিন।";
+    }
+
+  }, function() {
+
+    ST[s].checking = false;
+    ST[s].verified = false;
+
+    showQs(s, false);
+
+    if (msg) {
+      msg.textContent =
+        "সার্ভারের সাথে যোগাযোগ করা যায়নি। আবার চেষ্টা করুন।";
+    }
+
   });
 }
 function validateAll(s){
@@ -1388,10 +1589,34 @@ function trySubmit(s){
 function openM(id){lastFocus=document.activeElement;var m=$("#"+id);m.classList.add("open");m.setAttribute("aria-hidden","false");document.body.classList.add("no-scroll");var f=$("[data-autofocus]",m);if(f)f.focus()}
 function closeM(){$$(".modal.open").forEach(function(m){m.classList.remove("open");m.setAttribute("aria-hidden","true")});document.body.classList.remove("no-scroll");if(lastFocus&&lastFocus.focus)lastFocus.focus()}
 function submit(s){
-  if(wbusy)return;wbusy=true;curS=s;var st=ST[s],p=P(s);
+
+  var identity = getDailyIdentity();
+
+  if (!identity ||
+      !ST[s].verified ||
+      ST[s].mobile !== identity.mobile) {
+
+    ST[s].verified = false;
+    showQs(s, false);
+    verify(s);
+    return;
+  }
+
+  if(wbusy)return;
+
+  wbusy=true;
+  curS=s;
+
+  var st=ST[s],p=P(s);
   st.rid=st.rid||("w"+Date.now().toString(36)+Math.random().toString(36).slice(2,10));
   $("#wkLoader").classList.add("open");
-  var body={action:"submit",session:s,requestId:st.rid,name:$(".wk-name",p).value.replace(/\s+/g," ").trim(),mobile:$(".wk-mobile",p).value,answers:{}};
+  var body = {
+  action: "submit",
+  session: s,
+  requestId: st.rid,
+  mobile: identity.mobile,
+  answers: {}
+};
   W_CARDS[s].forEach(function(c){c.qs.forEach(function(q){
     if(!vis(s,q))return;
     if(st.A[q.k])body.answers[q.k]=st.A[q.k];
@@ -1433,7 +1658,7 @@ $("#wkRetry").addEventListener("click",function(){closeM();if(curS)submit(curS)}
 function resetSession(s){
   ST[s]=freshState();var p=P(s);
   $$("input[type=radio]",p).forEach(function(x){x.checked=false});
-  $$("textarea,.u-input,.wk-name,.wk-mobile",p).forEach(function(x){x.value=""});
+  $$("textarea,.u-input",p).forEach(function(x){x.value=""});
   $$(".acard-h",p).forEach(function(h){h.setAttribute("aria-expanded","false")});$$(".acard-b",p).forEach(function(b){b.hidden=true});
   $$(".field",p).forEach(clearErr);
   showQs(s,false);
