@@ -733,7 +733,7 @@ body.no-scroll{overflow:hidden}
       <li>ধাপে ধাপে প্রাথমিক তথ্য, পাঁচ ওয়াক্ত সালাত ও অন্যান্য আমল পূরণ করুন।</li>
       <li>প্রতিটি প্রয়োজনীয় প্রশ্নের উত্তর দিন। কোন প্রশ্ন এড়িয়ে যাবেন না।</li>
       <li>কোনো আমল ছুটে গেলে বা কারণ লেখার ঘর এলে সঠিক কারণ লিখুন।</li>
-      <li>নিজের সঠিক মোবাইল নম্বর দিন। ভুল নম্বর দেবেন না।</li>
+      <li>নিজের সঠিক মোবাইল নম্বর দিন। ভুল নম্বর দিবেন না।</li>
       <li>প্রতিদিন একই মোবাইল নম্বর ব্যবহার করুন।</li>
       <li>সব তথ্য যাচাই করে ‘জমা দিন’ বাটনে ক্লিক করুন।</li>
       <li>সফলতার বার্তা দেখলে বুঝবেন আপনার আমলশিট জমা হয়েছে। জমা না হলে দায়িত্বশীলদের সঙ্গে যোগাযোগ করুন।</li></ol></div>
@@ -1481,7 +1481,7 @@ function applyInfo(){
   SES.forEach(function(s){
     var o=info.sessions[s]||{open:false,message:""},p=P(s);
     $(".wk-closed",p).hidden=o.open;$(".wk-closed span",p).textContent=o.message||"এই ধাপ এখন বন্ধ আছে।";
-    $(".wk-body",p).hidden=!o.open;$(".wk-date",p).textContent=bnDate(info.date);
+    $(".wk-body",p).hidden=!o.open; 
   });
   if(!chosen)active=info.sessions.FRIDAY.open?0:(info.sessions.MONDAY.open?1:0);
   showStep(active);
@@ -1530,15 +1530,17 @@ $("#wkPanels").addEventListener("click",function(e){
 
   } else if(s === "FRIDAY"){
 
-    // শুক্রবার থেকে Daily Amal Section-এ ফিরে যাবে
+  if(window.openDailyPrayerSection){
+    window.openDailyPrayerSection();
+  } else {
     location.hash = "#registration";
-
     $("#registration").scrollIntoView({
       behavior: "smooth",
       block: "start"
     });
-
   }
+
+}
 
   return;
 }
@@ -1726,23 +1728,6 @@ function trySubmit(s){
 
   submit(s);
 }
-
-  var identity = getDailyIdentity();
-
-  if(!identity || !ST[s].verified){
-
-    ST[s].verified = false;
-    showQs(s, false);
-
-    var msg = $(".wk-access-message", P(s));
-
-    if(msg){
-      msg.textContent =
-        "অনুগ্রহ করে প্রথমে Daily Amal Sheet সফলভাবে পূরণ ও জমা দিন। এরপর আপনি Weekly Amal Sheet পূরণ করতে পারবেন।";
-    }
-
-    return;
-  }
 
   var bad = validateAll(s);
 
