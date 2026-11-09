@@ -1112,11 +1112,24 @@ function loadInfo(){
   return api("GET","action=info",null,15000).then(function(r){
     if(!r||!r.ok)throw {code:"BAD_RESPONSE"};
     info=r;applyInfo();
-  },function(){
-    /* সার্ভার না পেলে শুধু প্রদর্শনের জন্য ঢাকা তারিখ নির্ধারণ; জমার সময় সার্ভারই চূড়ান্ত */
-    var d=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Dhaka"}).format(new Date());
-    $("#dateView").textContent=bnDate(d)+" (প্রদর্শনের জন্য)";$("#heroDate").textContent=bnDate(d);
-  });
+ },function(){
+
+  var d=new Intl.DateTimeFormat("en-CA",{
+    timeZone:"Asia/Dhaka"
+  }).format(new Date());
+
+  $("#heroDate").textContent=bnDate(d);
+
+  // ফর্ম বন্ধ থাকবে
+  $("#formWrap").hidden=true;
+
+  // সাধারণ সময়সূচির বার্তা দেখাবে
+  $("#closedBox").hidden=false;
+
+  $("#closedText").textContent =
+    "ফর্ম প্রতিদিন ঢাকা সময় সন্ধ্যা ৬টা থেকে রাত ১২টা পর্যন্ত খোলা থাকে।";
+
+});
 }
 function applyInfo() {
 
@@ -1145,7 +1158,25 @@ function applyInfo() {
       ? 0
       : (info.sessions.MONDAY.open ? 1 : 0);
   }
+if(!chosen){
 
+  var today = Number(info.weekday);
+
+  if(today === 1){
+    // সোমবার
+    active = 1;
+  }
+  else if(today === 5){
+    // শুক্রবার
+    active = 0;
+  }
+  else{
+    // অন্য দিন
+    active = 0;
+  }
+}
+
+showStep(active);
   showStep(active);
 
   // কেবল খোলা সেশনগুলোতে Daily Submission যাচাই
