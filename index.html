@@ -7,7 +7,7 @@
  ১) বানান সংশোধন: "দুরুদ" ও "উভয়টি" — UI লেখা, কমেন্ট ও মেসেজ সব জায়গায় (সংশ্লিষ্ট ফিচার বা লজিক অপরিবর্তিত)।
  ২) সাপ্তাহিক ফর্মের "উপস্থিত থাকতে পারিনি" অপশনের বানান ফর্মের আসল অপশনের সাথে মেলানো হয়েছে ("জুরুরতের") — নইলে সার্ভার উত্তর গ্রহণ করত না।
     পাঠচক্র/মজলিসের কারণ-প্রশ্নে এখন "উভয়টি" শব্দটিই ব্যবহার হয়; ফর্মে কারণ-ঘর একটিই, তাই সার্ভার তিন ক্ষেত্রেই একই ঘরে লেখে।
- ৩) দৈনিক ও সাপ্তাহিক দুটি আলাদা Web App ব্যবহার করে: দৈনিকের URL API_CONFIG.webAppUrl-এ (আগের মতো), সাপ্তাহিকের URL WEEKLY_API_CONFIG.webAppUrl-এ (নতুন — এখনো ফাঁকা, ডিপ্লয়ের পর বসান)।
+ ৩) দৈনিক ও সাপ্তাহিক দুটি আলাদা Web App ব্যবহার করে: দৈনিকের URL API_CONFIG.webAppUrl-এ এবং সাপ্তাহিকের URL WEEKLY_API_CONFIG.webAppUrl-এ সেট করা আছে।
  ভাঙেনি: দৈনিক ফর্মের ৩ ধাপ, নকশা, বিদ্যমান প্রশ্ন ও লজিক, গাইডলাইন, সহায়তা সেকশন।
 ==================================================
 -->
@@ -1480,11 +1480,32 @@ function applyInfo(){
   alertMsg("");
   SES.forEach(function(s){
     var o=info.sessions[s]||{open:false,message:""},p=P(s);
-    $(".wk-closed",p).hidden=o.open;$(".wk-closed span",p).textContent=o.message||"এই ধাপ এখন বন্ধ আছে।";
-    $(".wk-body",p).hidden=!o.open; 
+    $(".wk-closed",p).hidden=o.open;
+    $(".wk-closed span",p).textContent=o.message||"এই ধাপ এখন বন্ধ আছে।";
+    $(".wk-body",p).hidden=!o.open;
   });
-  if(!chosen)active=info.sessions.FRIDAY.open?0:(info.sessions.MONDAY.open?1:0);
+
+  if(!chosen){
+    // info.date হলো সার্ভারের ঢাকা তারিখ (YYYY-MM-DD)
+    var dateParts=String(info.date||"").split("-");
+    var weekday=-1;
+    if(dateParts.length===3){
+      weekday=new Date(Date.UTC(
+        Number(dateParts[0]),Number(dateParts[1])-1,Number(dateParts[2])
+      )).getUTCDay();
+    }
+    if(weekday===1) active=1;       // সোমবার
+    else if(weekday===5) active=0;  // শুক্রবার
+    else active=info.sessions.FRIDAY.open?0:(info.sessions.MONDAY.open?1:0);
+  }
+
   showStep(active);
+
+  // পৃষ্ঠা রিফ্রেশের পরও সংরক্ষিত Daily পরিচয় থাকলে বর্তমান খোলা সেশন যাচাই
+  var selectedSession=SES[active];
+  if(info.sessions[selectedSession] && info.sessions[selectedSession].open){
+    verify(selectedSession);
+  }
 }
 
 /* ---- ইভেন্ট ---- */
@@ -1547,7 +1568,18 @@ $("#wkPanels").addEventListener("click",function(e){
   if(e.target.closest(".wk-submit")){trySubmit(s)}
 });
 $("#wkPanels").addEventListener("submit",function(e){e.preventDefault()});
-$("#wkStepper").addEventListener("click",function(e){var li=e.target.closest("li");if(li&&!wbusy){chosen=true;showStep(+li.dataset.i)}});
+$("#wkStepper").addEventListener("click",function(e){
+  var li=e.target.closest("li");
+  if(li&&!wbusy){
+    chosen=true;
+    var index=+li.dataset.i;
+    showStep(index);
+    var selectedSession=SES[index];
+    if(info && info.sessions[selectedSession] && info.sessions[selectedSession].open){
+      verify(selectedSession);
+    }
+  }
+});
 
 function getDailyIdentity() {
 
@@ -1729,18 +1761,6 @@ function trySubmit(s){
   submit(s);
 }
 
-  var bad = validateAll(s);
-
-  if(bad.length){
-    alertMsg("অনুগ্রহ করে লাল চিহ্নিত প্রশ্নগুলোর উত্তর দিন।");
-    focusBad(bad[0]);
-    return;
-  }
-
-  alertMsg("");
-  submit(s);
-}
-
 /* ---- জমা ---- */
 function openM(id){lastFocus=document.activeElement;var m=$("#"+id);m.classList.add("open");m.setAttribute("aria-hidden","false");document.body.classList.add("no-scroll");var f=$("[data-autofocus]",m);if(f)f.focus()}
 function closeM(){$$(".modal.open").forEach(function(m){m.classList.remove("open");m.setAttribute("aria-hidden","true")});document.body.classList.remove("no-scroll");if(lastFocus&&lastFocus.focus)lastFocus.focus()}
@@ -1798,12 +1818,12 @@ function done(s,r){
   $("#wkLoader").classList.remove("open");wbusy=false;
   if(r&&r.ok&&r.status==="success"){
     ST[s].rid=null;ST[s].done=true;renderStepper();
-   var panel = P(s);
-
-$$(".wk-submit", panel).forEach(function(btn){
-  btn.disabled = true;
-  btn.textContent = "ইতোমধ্যে জমা হয়েছে";
-});
+    var panel=P(s);
+    var statusMessage=$(".wk-access-message",panel);
+    if(statusMessage){
+      statusMessage.textContent="আলহামদুলিল্লাহ! আপনার এই দিনের সাপ্তাহিক আমলশিট সফলভাবে জমা হয়েছে।";
+    }
+    showQs(s,false);
     $("#wkOkText").textContent="আপনার "+META[s].day+"ের আমলশিট সফলভাবে জমা হয়েছে।";
     $("#wkOkDate").textContent="জমার তারিখ: "+bnDate(r.date);openM("wkOkModal");return;
   }
